@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMS Sync — HP 1</title>
+<style>
+*{box-sizing:border-box}body{font-family:system-ui,Arial;margin:0;background:#f3f5f9;color:#182230}
+main{max-width:900px;margin:36px auto;padding:18px}.card{background:white;border-radius:16px;padding:22px;box-shadow:0 5px 24px #14213d12;margin-bottom:16px}
+h1{margin:0 0 8px}p{color:#536174}input,button{font:inherit;padding:12px;border-radius:9px;border:1px solid #ccd3dd}
+input{width:100%;margin:8px 0}button{background:#155eef;color:white;border:0;cursor:pointer}
+button.secondary{background:#e8eefc;color:#173b7a}.hidden{display:none}.msg{border-top:1px solid #e6eaf0;padding:14px 0}
+.meta{font-size:13px;color:#64748b}.body{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:7px}
+#error{color:#b42318}.top{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+</style>
+</head>
+<body><main>
+<section class="card">
+<h1>SMS Sync</h1><p>Dashboard HP 1 — pesan SMS baru yang dikirim dari HP 2 dengan izin pemiliknya.</p>
+<div id="login"><label>Kata sandi admin</label><input id="password" type="password" autocomplete="current-password"><button id="loginBtn">Masuk</button><p id="error"></p></div>
+<div id="panel" class="hidden">
+ <div class="top"><h2>Kotak masuk</h2><div><button class="secondary" id="refresh">Muat ulang</button> <button id="logout">Keluar</button></div></div>
+ <p id="status" class="meta"></p><div id="messages"></div>
+</div>
+</section>
+<section class="card"><b>Privasi:</b><p>Jaga kata sandi admin dan token perangkat. Gunakan HTTPS sebelum mengakses dashboard melalui internet.</p></section>
+</main>
+<script>
+const $=id=>document.getElementById(id); let token=sessionStorage.getItem("smsAdminToken");
+function show(){ $("login").classList.toggle("hidden",!!token); $("panel").classList.toggle("hidden",!token); if(token) load(); }
+async function login(){ $("error").textContent=""; const r=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:$("password").value})}); const d=await r.json(); if(!r.ok){$("error").textContent=d.error||"Gagal masuk";return;} token=d.token;sessionStorage.setItem("smsAdminToken",token);show();}
+async function load(){const r=await fetch("/api/messages",{headers:{Authorization:"Bearer "+token}});if(r.status===401){logout();return;}const rows=await r.json();$("status").textContent=rows.length+" pesan terakhir (maksimal 500)";$("messages").innerHTML=rows.map(m=>`<article class="msg"><div class="top"><b>${esc(m.sender)}</b><span class="meta">${esc(m.receivedAt)} · ${esc(m.deviceId)}</span><button class="secondary" data-id="${m.id}">Hapus</button></div><div class="body">${esc(m.body)}</div></article>`).join("")||"<p>Belum ada SMS.</p>";document.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>del(b.dataset.id));}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+async function del(id){if(!confirm("Hapus pesan ini?"))return;await fetch("/api/messages/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+token}});load();}
+function logout(){token=null;sessionStorage.removeItem("smsAdminToken");show();}
+$("loginBtn").onclick=login;$("password").onkeydown=e=>{if(e.key==="Enter")login();};$("refresh").onclick=load;$("logout").onclick=logout;show();
+</script></body></html>

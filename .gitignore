@@ -1,0 +1,4 @@
+server/.env
+server/*.sqlite*
+android/.gradle/
+android/**/build/

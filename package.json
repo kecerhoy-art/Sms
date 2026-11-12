@@ -1,0 +1,16 @@
+{
+  "name": "sms-sync-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Consent-based incoming SMS sync API and dashboard",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
